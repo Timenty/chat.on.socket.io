@@ -40,7 +40,11 @@ export default {
 	},
 	plugins: [
 		svelte({
-			preprocess: sveltePreprocess(),
+			preprocess: sveltePreprocess({
+				stylus: {
+					includePaths: ['src/styles'],
+				  },
+			}),
 			compilerOptions: {
 				// enable run-time checks when not in production
 				dev: !production
