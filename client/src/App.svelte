@@ -1,27 +1,18 @@
-
 <script lang="ts">
-	export let name: string;
+	import Router from 'svelte-spa-router';
+	import {link} from 'svelte-spa-router';
+
+	import routes from './routes';
 </script>
 
+<ul>
+    <li><a href="/" use:link>Home</a></li>
+    <li><a href="/hello/svelte" use:link>Say hi!</a></li>
+    <li><a href="/wild/card" use:link>Wildcard route</a></li>
+    <li><a href="/does/not/exist" use:link>Not found</a></li>
+</ul>
 
-<main>
-	<h1>Hello {name}!</h1>
-	<ul class="pages">
-		<li class="chat page">
-		  <div class="chatArea">
-			<ul class="messages"></ul>
-		  </div>
-		  <input class="inputMessage" placeholder="Type here..."/>
-		</li>
-		<li class="login page">
-		  <div class="form">
-			<h3 class="title">What's your nickname?</h3>
-			<input class="usernameInput" type="text" maxlength="14" />
-		  </div>
-		</li>
-	</ul>
-</main>
-
+<Router {routes} />
 
 <style lang="scss">
 	:global(body) {
