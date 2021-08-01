@@ -1,17 +1,18 @@
-import { io } from "socket.io-client";
-import { writable } from 'svelte/store';
+import { io, Socket } from 'socket.io-client';
+import type { ChatMessage } from '../types/message.type';
 
-const socket = io();
+const socket: Socket = io('localhost:3000');
 
-export const socketStore = () => {
-  const { subscribe, set, update } = writable(saved)           // create the underlying writable store
-
-  return {
-    subscribe,
-    set: (value: any) => {
-      localStorage.setItem(key, toString(value))              // save also to local storage as a string
-      return set(value)
-    },
-    update
-  }
+function setUserName(userName: string): void {
+    socket.emit('add user', userName);
 }
+
+function sendMessage(msg: ChatMessage): void {
+    socket.emit('new message', msg);
+}
+
+export {
+    setUserName,
+    sendMessage,
+    socket,
+};
