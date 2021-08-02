@@ -3,7 +3,7 @@ import { setUserName as emitUserName } from './socketStore';
 
 function createUserStore() {
     const { subscribe, update } = writable({
-        userName: 'Василий'
+        userName: ''
     });
 
     return {

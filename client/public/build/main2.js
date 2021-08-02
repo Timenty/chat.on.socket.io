@@ -7819,7 +7819,7 @@ io.Socket;
 
 function createUserStore() {
     const { subscribe, update } = writable({
-        userName: 'Василий'
+        userName: ''
     });
     return {
         subscribe,
@@ -7867,7 +7867,10 @@ function chatStore() {
         pushMessage(message);
     };
     const addParticipantsMessage = (data) => {
-        let chatMessage;
+        let chatMessage = {
+            message: '',
+            username: ''
+        };
         if (data.numUsers === 1) {
             chatMessage.message += `there's 1 participant`;
         }
@@ -7899,12 +7902,14 @@ function sendMessage(message) {
     chat.pushMessage(message);
     socket.emit('new message', message);
 }
-socket.on("new message", chat.pushMessage);
+socket.on("new message", ({ message }) => chat.pushMessage(message));
 socket.on("user joined", (data) => {
+    console.log('user joined', data);
     chat.log({ message: `${data.username} joined` });
     chat.addParticipantsMessage(data);
 });
 socket.on("user left", (data) => {
+    console.log('user left', data);
     chat.log({ message: `${data.username} left` });
     chat.addParticipantsMessage(data);
 });
@@ -7926,7 +7931,7 @@ function get_each_context(ctx, list, i) {
 	return child_ctx;
 }
 
-// (42:4) {:else}
+// (43:4) {:else}
 function create_else_block(ctx) {
 	let li;
 	let div;
@@ -7950,16 +7955,16 @@ function create_else_block(ctx) {
 			button = element("button");
 			button.textContent = "ok";
 			attr_dev(h3, "class", "title");
-			add_location(h3, file$3, 44, 16, 1275);
+			add_location(h3, file$3, 45, 16, 1300);
 			attr_dev(input, "class", "usernameInput");
 			attr_dev(input, "type", "text");
 			attr_dev(input, "maxlength", "14");
-			add_location(input, file$3, 45, 16, 1336);
-			add_location(button, file$3, 51, 16, 1529);
+			add_location(input, file$3, 46, 16, 1361);
+			add_location(button, file$3, 52, 16, 1554);
 			attr_dev(div, "class", "form");
-			add_location(div, file$3, 43, 12, 1240);
+			add_location(div, file$3, 44, 12, 1265);
 			attr_dev(li, "class", "login page");
-			add_location(li, file$3, 42, 8, 1204);
+			add_location(li, file$3, 43, 8, 1229);
 		},
 		m: function mount(target, anchor) {
 			insert_dev(target, li, anchor);
@@ -7967,7 +7972,7 @@ function create_else_block(ctx) {
 			append_dev(div, h3);
 			append_dev(div, t1);
 			append_dev(div, input);
-			set_input_value(input, /*userName*/ ctx[2]);
+			set_input_value(input, /*userName*/ ctx[1]);
 			append_dev(div, t2);
 			append_dev(div, button);
 
@@ -7981,8 +7986,8 @@ function create_else_block(ctx) {
 			}
 		},
 		p: function update(ctx, dirty) {
-			if (dirty & /*userName*/ 4 && input.value !== /*userName*/ ctx[2]) {
-				set_input_value(input, /*userName*/ ctx[2]);
+			if (dirty & /*userName*/ 2 && input.value !== /*userName*/ ctx[1]) {
+				set_input_value(input, /*userName*/ ctx[1]);
 			}
 		},
 		d: function destroy(detaching) {
@@ -7996,14 +8001,14 @@ function create_else_block(ctx) {
 		block,
 		id: create_else_block.name,
 		type: "else",
-		source: "(42:4) {:else}",
+		source: "(43:4) {:else}",
 		ctx
 	});
 
 	return block;
 }
 
-// (27:4) {#if !loginPage}
+// (28:4) {#if !loginPage}
 function create_if_block(ctx) {
 	let li;
 	let div;
@@ -8033,14 +8038,14 @@ function create_if_block(ctx) {
 			t = space();
 			input = element("input");
 			attr_dev(ul, "class", "messages");
-			add_location(ul, file$3, 29, 16, 812);
+			add_location(ul, file$3, 30, 16, 837);
 			attr_dev(div, "class", "chatArea");
-			add_location(div, file$3, 28, 12, 773);
+			add_location(div, file$3, 29, 12, 798);
 			attr_dev(input, "class", "inputMessage");
 			attr_dev(input, "placeholder", "Type here...");
-			add_location(input, file$3, 35, 12, 1031);
+			add_location(input, file$3, 36, 12, 1056);
 			attr_dev(li, "class", "chat page");
-			add_location(li, file$3, 27, 8, 738);
+			add_location(li, file$3, 28, 8, 763);
 		},
 		m: function mount(target, anchor) {
 			insert_dev(target, li, anchor);
@@ -8053,7 +8058,7 @@ function create_if_block(ctx) {
 
 			append_dev(li, t);
 			append_dev(li, input);
-			set_input_value(input, /*msgText*/ ctx[1]);
+			set_input_value(input, /*msgText*/ ctx[2]);
 
 			if (!mounted) {
 				dispose = listen_dev(input, "input", /*input_input_handler*/ ctx[6]);
@@ -8085,8 +8090,8 @@ function create_if_block(ctx) {
 				each_blocks.length = each_value.length;
 			}
 
-			if (dirty & /*msgText*/ 2 && input.value !== /*msgText*/ ctx[1]) {
-				set_input_value(input, /*msgText*/ ctx[1]);
+			if (dirty & /*msgText*/ 4 && input.value !== /*msgText*/ ctx[2]) {
+				set_input_value(input, /*msgText*/ ctx[2]);
 			}
 		},
 		d: function destroy(detaching) {
@@ -8101,14 +8106,14 @@ function create_if_block(ctx) {
 		block,
 		id: create_if_block.name,
 		type: "if",
-		source: "(27:4) {#if !loginPage}",
+		source: "(28:4) {#if !loginPage}",
 		ctx
 	});
 
 	return block;
 }
 
-// (31:20) {#each messages as { message, username }}
+// (32:20) {#each messages as { message, username }}
 function create_each_block(ctx) {
 	let li;
 	let t0_value = /*username*/ ctx[12] + "";
@@ -8123,7 +8128,7 @@ function create_each_block(ctx) {
 			t0 = text(t0_value);
 			t1 = text(":");
 			t2 = text(t2_value);
-			add_location(li, file$3, 31, 24, 920);
+			add_location(li, file$3, 32, 24, 945);
 		},
 		m: function mount(target, anchor) {
 			insert_dev(target, li, anchor);
@@ -8144,7 +8149,7 @@ function create_each_block(ctx) {
 		block,
 		id: create_each_block.name,
 		type: "each",
-		source: "(31:20) {#each messages as { message, username }}",
+		source: "(32:20) {#each messages as { message, username }}",
 		ctx
 	});
 
@@ -8169,7 +8174,7 @@ function create_fragment$3(ctx) {
 			ul = element("ul");
 			if_block.c();
 			attr_dev(ul, "class", "pages");
-			add_location(ul, file$3, 25, 0, 690);
+			add_location(ul, file$3, 26, 0, 715);
 		},
 		l: function claim(nodes) {
 			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -8228,16 +8233,18 @@ function instance$3($$self, $$props, $$invalidate) {
 	validate_slots("Home", slots, []);
 	
 	let loginPage = true;
+	let userName = $user.userName;
 	let msgText = "";
 
 	function submitUserName() {
 		$$invalidate(0, loginPage = false);
+		user.setUserName(userName);
 		setUserName(userName);
 	}
 
 	function send() {
 		const msg = { username: userName, message: msgText };
-		$$invalidate(1, msgText = "");
+		$$invalidate(2, msgText = "");
 		sendMessage(msg);
 	}
 
@@ -8253,26 +8260,25 @@ function instance$3($$self, $$props, $$invalidate) {
 
 	function input_input_handler() {
 		msgText = this.value;
-		$$invalidate(1, msgText);
+		$$invalidate(2, msgText);
 	}
 
 	function input_input_handler_1() {
 		userName = this.value;
-		($$invalidate(2, userName), $$invalidate(8, $user));
+		$$invalidate(1, userName);
 	}
 
 	$$self.$capture_state = () => ({
-		socket,
 		setUserName,
 		sendMessage,
 		user,
 		chat,
 		loginPage,
+		userName,
 		msgText,
 		submitUserName,
 		send,
 		handleKeydown,
-		userName,
 		$user,
 		messages,
 		$chat
@@ -8280,12 +8286,11 @@ function instance$3($$self, $$props, $$invalidate) {
 
 	$$self.$inject_state = $$props => {
 		if ("loginPage" in $$props) $$invalidate(0, loginPage = $$props.loginPage);
-		if ("msgText" in $$props) $$invalidate(1, msgText = $$props.msgText);
-		if ("userName" in $$props) $$invalidate(2, userName = $$props.userName);
+		if ("userName" in $$props) $$invalidate(1, userName = $$props.userName);
+		if ("msgText" in $$props) $$invalidate(2, msgText = $$props.msgText);
 		if ("messages" in $$props) $$invalidate(3, messages = $$props.messages);
 	};
 
-	let userName;
 	let messages;
 
 	if ($$props && "$$inject" in $$props) {
@@ -8293,10 +8298,6 @@ function instance$3($$self, $$props, $$invalidate) {
 	}
 
 	$$self.$$.update = () => {
-		if ($$self.$$.dirty & /*$user*/ 256) {
-			$$invalidate(2, userName = $user.userName);
-		}
-
 		if ($$self.$$.dirty & /*$chat*/ 512) {
 			$$invalidate(3, messages = $chat.getCurrentChat().messages);
 		}
@@ -8304,8 +8305,8 @@ function instance$3($$self, $$props, $$invalidate) {
 
 	return [
 		loginPage,
-		msgText,
 		userName,
+		msgText,
 		messages,
 		submitUserName,
 		handleKeydown,
@@ -8570,19 +8571,23 @@ var routes = {
 const file = "src/App.svelte";
 
 function create_fragment(ctx) {
+	let h5;
+	let t0_value = /*$user*/ ctx[0].userName + "";
+	let t0;
+	let t1;
 	let ul;
 	let li0;
 	let a0;
-	let t1;
+	let t3;
 	let li1;
 	let a1;
-	let t3;
+	let t5;
 	let li2;
 	let a2;
-	let t5;
+	let t7;
 	let li3;
 	let a3;
-	let t7;
+	let t9;
 	let router;
 	let current;
 	let mounted;
@@ -8591,56 +8596,63 @@ function create_fragment(ctx) {
 
 	const block = {
 		c: function create() {
+			h5 = element("h5");
+			t0 = text(t0_value);
+			t1 = space();
 			ul = element("ul");
 			li0 = element("li");
 			a0 = element("a");
 			a0.textContent = "Home";
-			t1 = space();
+			t3 = space();
 			li1 = element("li");
 			a1 = element("a");
 			a1.textContent = "Say hi!";
-			t3 = space();
+			t5 = space();
 			li2 = element("li");
 			a2 = element("a");
 			a2.textContent = "Wildcard route";
-			t5 = space();
+			t7 = space();
 			li3 = element("li");
 			a3 = element("a");
 			a3.textContent = "Not found";
-			t7 = space();
+			t9 = space();
 			create_component(router.$$.fragment);
+			add_location(h5, file, 7, 0, 272);
 			attr_dev(a0, "href", "/");
-			add_location(a0, file, 6, 8, 193);
-			add_location(li0, file, 6, 4, 189);
+			add_location(a0, file, 9, 8, 311);
+			add_location(li0, file, 9, 4, 307);
 			attr_dev(a1, "href", "/hello/svelte");
-			add_location(a1, file, 7, 8, 236);
-			add_location(li1, file, 7, 4, 232);
+			add_location(a1, file, 10, 8, 354);
+			add_location(li1, file, 10, 4, 350);
 			attr_dev(a2, "href", "/wild/card");
-			add_location(a2, file, 8, 8, 294);
-			add_location(li2, file, 8, 4, 290);
+			add_location(a2, file, 11, 8, 412);
+			add_location(li2, file, 11, 4, 408);
 			attr_dev(a3, "href", "/does/not/exist");
-			add_location(a3, file, 9, 8, 356);
-			add_location(li3, file, 9, 4, 352);
+			add_location(a3, file, 12, 8, 474);
+			add_location(li3, file, 12, 4, 470);
 			attr_dev(ul, "class", "svelte-yg7b73");
-			add_location(ul, file, 5, 0, 180);
+			add_location(ul, file, 8, 0, 298);
 		},
 		l: function claim(nodes) {
 			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
 		},
 		m: function mount(target, anchor) {
+			insert_dev(target, h5, anchor);
+			append_dev(h5, t0);
+			insert_dev(target, t1, anchor);
 			insert_dev(target, ul, anchor);
 			append_dev(ul, li0);
 			append_dev(li0, a0);
-			append_dev(ul, t1);
+			append_dev(ul, t3);
 			append_dev(ul, li1);
 			append_dev(li1, a1);
-			append_dev(ul, t3);
+			append_dev(ul, t5);
 			append_dev(ul, li2);
 			append_dev(li2, a2);
-			append_dev(ul, t5);
+			append_dev(ul, t7);
 			append_dev(ul, li3);
 			append_dev(li3, a3);
-			insert_dev(target, t7, anchor);
+			insert_dev(target, t9, anchor);
 			mount_component(router, target, anchor);
 			current = true;
 
@@ -8655,7 +8667,9 @@ function create_fragment(ctx) {
 				mounted = true;
 			}
 		},
-		p: noop,
+		p: function update(ctx, [dirty]) {
+			if ((!current || dirty & /*$user*/ 1) && t0_value !== (t0_value = /*$user*/ ctx[0].userName + "")) set_data_dev(t0, t0_value);
+		},
 		i: function intro(local) {
 			if (current) return;
 			transition_in(router.$$.fragment, local);
@@ -8666,8 +8680,10 @@ function create_fragment(ctx) {
 			current = false;
 		},
 		d: function destroy(detaching) {
+			if (detaching) detach_dev(h5);
+			if (detaching) detach_dev(t1);
 			if (detaching) detach_dev(ul);
-			if (detaching) detach_dev(t7);
+			if (detaching) detach_dev(t9);
 			destroy_component(router, detaching);
 			mounted = false;
 			run_all(dispose);
@@ -8686,6 +8702,9 @@ function create_fragment(ctx) {
 }
 
 function instance($$self, $$props, $$invalidate) {
+	let $user;
+	validate_store(user, "user");
+	component_subscribe($$self, user, $$value => $$invalidate(0, $user = $$value));
 	let { $$slots: slots = {}, $$scope } = $$props;
 	validate_slots("App", slots, []);
 	const writable_props = [];
@@ -8694,8 +8713,16 @@ function instance($$self, $$props, $$invalidate) {
 		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<App> was created with unknown prop '${key}'`);
 	});
 
-	$$self.$capture_state = () => ({ Router, link, routes });
-	return [];
+	$$self.$capture_state = () => ({
+		Router,
+		link,
+		socket,
+		user,
+		routes,
+		$user
+	});
+
+	return [$user];
 }
 
 class App extends SvelteComponentDev {

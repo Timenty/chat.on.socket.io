@@ -42,7 +42,10 @@ function chatStore() {
     };
 
     const addParticipantsMessage = (data: any) => {
-        let chatMessage: ChatMessage;
+        let chatMessage: ChatMessage = {
+            message: '',
+            username: ''
+        };
 
         if (data.numUsers === 1) {
             chatMessage.message += `there's 1 participant`;

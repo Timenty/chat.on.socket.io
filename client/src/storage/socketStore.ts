@@ -13,14 +13,16 @@ function sendMessage(message: ChatMessage): void {
     socket.emit('new message', message);
 }
 
-socket.on("new message", chat.pushMessage);
+socket.on("new message", ({message}) => chat.pushMessage(message));
 
 socket.on("user joined", (data) => {
+    console.log('user joined', data);
     chat.log({ message: `${data.username} joined` } as ChatMessage);
     chat.addParticipantsMessage(data);
 });
 
 socket.on("user left", (data) => {
+    console.log('user left', data);
     chat.log({ message: `${data.username} left` } as ChatMessage);
     chat.addParticipantsMessage(data);
 });

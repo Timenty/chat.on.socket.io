@@ -1,16 +1,17 @@
 <script lang="ts">
     import type { ChatMessage } from "../types/message.type";
-    import { socket, setUserName, sendMessage } from '../storage/socketStore';
+    import { setUserName, sendMessage } from '../storage/socketStore';
     import { user } from '../storage/userStore';
     import { chat } from '../storage/chatStore';
 
     let loginPage: boolean = true;
-    $: userName = $user.userName;
+    let userName = $user.userName;
     $: messages = $chat.getCurrentChat().messages;
     let msgText: string = "";
 
     function submitUserName(): void {
         loginPage = false;
+        user.setUserName(userName);
         setUserName(userName);
     }
 
