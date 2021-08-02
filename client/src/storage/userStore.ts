@@ -9,8 +9,8 @@ function createUserStore() {
     return {
         subscribe,
         setUserName: (userName = '') => {
-            update(u => ({...u, userName}));
             emitUserName(userName);
+            update(u => ({...u, userName}));
         },
     };
 }

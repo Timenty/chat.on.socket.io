@@ -1,80 +1,28 @@
 <script lang="ts">
-    import { io, Socket } from "socket.io-client";
     import type { ChatMessage } from "../types/message.type";
-
-    const socket: Socket = io("localhost:3000");
+    import { socket, setUserName, sendMessage } from '../storage/socketStore';
+    import { user } from '../storage/userStore';
+    import { chat } from '../storage/chatStore';
 
     let loginPage: boolean = true;
-    let userName: string = "";
-    let messages: Array<ChatMessage> = [];
+    $: userName = $user.userName;
+    $: messages = $chat.getCurrentChat().messages;
     let msgText: string = "";
 
     function submitUserName(): void {
         loginPage = false;
-        socket.emit("add user", userName);
+        setUserName(userName);
     }
 
-    function sendMessage(): void {
+    function send(): void {
         const msg = { username: userName, message: msgText } as ChatMessage;
         msgText = "";
-        addChatMessage(msg);
-        socket.emit("new message", msg);
+        sendMessage(msg);
     }
 
     function handleKeydown({ keyCode }: { keyCode: number }): void {
-        if (keyCode === 13 && !loginPage) sendMessage();
+        if (keyCode === 13 && !loginPage) send();
     }
-
-    function log(msg: ChatMessage): void {
-        msg.username = "log";
-        addChatMessage(msg);
-    }
-
-    const addParticipantsMessage = (data: any) => {
-        let message = "";
-        if (data.numUsers === 1) {
-            message += `there's 1 participant`;
-        } else {
-            message += `there are ${data.numUsers} participants`;
-        }
-        log({ message } as ChatMessage);
-    };
-
-    function addChatMessage(msg: ChatMessage): void {
-        messages = [...messages, msg];
-    }
-
-    socket.on("new message", ({message}: {message: ChatMessage}) => {
-        console.log("new message", message);
-        addChatMessage(message);
-    });
-
-    // Whenever the server emits 'user joined', log it in the chat body
-    socket.on("user joined", (data) => {
-        log({ message: `${data.username} joined` } as ChatMessage);
-        addParticipantsMessage(data);
-    });
-
-    // Whenever the server emits 'user left', log it in the chat body
-    socket.on("user left", (data) => {
-        log({ message: `${data.username} left` } as ChatMessage);
-        addParticipantsMessage(data);
-    });
-
-    socket.on("disconnect", () => {
-        log({ message: "you have been disconnected" } as ChatMessage);
-    });
-
-    socket.on("reconnect", () => {
-        log({ message: "you have been reconnected" } as ChatMessage);
-        if (userName) {
-            socket.emit("add user", userName);
-        }
-    });
-
-    socket.on("reconnect_error", () => {
-        log({ message: "attempt to reconnect has failed" } as ChatMessage);
-    });
 </script>
 
 <svelte:window on:keydown={handleKeydown} />

@@ -10,6 +10,9 @@ const initialState = {
             messages: []
         }
     ],
+    getCurrentChat() {
+        return this.list.find(({id}) => id === this.currentChatId);
+    }
 };
 
 function chatStore() {
@@ -24,17 +27,42 @@ function chatStore() {
     }
     const getCurrentChat = () => getChatById(state.list, state.currentChatId);
 
+    const pushMessage = (message: ChatMessage): void => {
+        update(chatStruct => {
+            const { currentChatId, list } = chatStruct;
+            const chat = getChatById(list, currentChatId);
+            chat.messages = [...chat.messages, message];
+            return chatStruct;
+        });
+    };
+
+    const log = (message: ChatMessage): void => {
+        message.username = "log";
+        pushMessage(message);
+    };
+
+    const addParticipantsMessage = (data: any) => {
+        let chatMessage: ChatMessage;
+
+        if (data.numUsers === 1) {
+            chatMessage.message += `there's 1 participant`;
+        } else {
+            chatMessage.message += `there are ${data.numUsers} participants`;
+        }
+
+        log(chatMessage);
+    };
+
     return {
+        getChatById,
         subscribe,
-        pushMessage(message: ChatMessage): void {
-            update(chatStruct => {
-                const { currentChatId, list } = chatStruct;
-                const chat = getChatById(list, currentChatId);
-                chat.messages = [...chat.messages, message];
-                return chatStruct;
-            });
-        },
         getCurrentChat,
+        pushMessage,
+        addParticipantsMessage,
+        getUser: () => {
+            return user;
+        },
+        log,
         setCurrentChatById: (currentChatId: number) => update(chatStruct => ({
             ...chatStruct,
             currentChatId,
