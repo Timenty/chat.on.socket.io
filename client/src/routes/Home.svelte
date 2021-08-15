@@ -20,19 +20,15 @@
 
 <svelte:window on:keydown={handleKeydown} />
 
-<ul class="pages">
-  <li class="chat page">
-    <div class="chatArea">
-      <ul class="messages">
-        {#each messages as { message, username }}
-          <li>{username}:{message}</li>
-        {/each}
-      </ul>
-    </div>
-    <input
-      bind:value={msgText}
-      class="inputMessage"
-      placeholder="Type here..."
-    />
-  </li>
-</ul>
+<div class="chatArea">
+  <ul class="messages">
+    {#each messages as { message, username }}
+      <li>[{username}]: {message}</li>
+    {/each}
+  </ul>
+</div>
+<input
+  bind:value={msgText}
+  class="inputMessage"
+  placeholder="Type here..."
+/>
