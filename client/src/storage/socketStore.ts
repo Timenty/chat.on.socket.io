@@ -31,7 +31,7 @@ socket.on("disconnect", () => chat.log({ message: "you have been disconnected" }
 
 socket.on("reconnect", () => {
     chat.log({ message: "you have been reconnected" } as ChatMessage);
-    const { userName } = chat.getUser().userName;
+    const userName = chat.getUser().userName;
     if (userName) socket.emit("add user", userName);
 });
 

@@ -1,14 +1,27 @@
 /* eslint-disable */
 
 import { wrap } from 'svelte-spa-router/wrap';
+import isAuthorized from './guards/isAuthorized';
 
 import Home from './routes/Home.svelte';
+import Login from './routes/Login.svelte';
 import Loading from './routes/Loading.svelte';
 import NotFound from './routes/NotFound.svelte';
 
 export default {
     // Exact path
-    '/': Home,
+    '/login': wrap({
+        component: Login,
+        conditions: [
+            () => !isAuthorized()
+        ]
+    }),
+    '/': wrap({
+        component: Home,
+        conditions: [
+            isAuthorized
+        ]
+    }),
     // Using named parameters, with last being optional
     // This is dynamically imported, so the code is loaded on-demand from the server
     '/hello/:first/:last?': wrap({

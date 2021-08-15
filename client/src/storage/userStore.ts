@@ -3,14 +3,16 @@ import { setUserName as emitUserName } from './socketStore';
 
 function createUserStore() {
     const { subscribe, update } = writable({
-        userName: ''
+        userName: '',
+        authorized: false,
     });
 
     return {
         subscribe,
         setUserName: (userName = '') => {
             emitUserName(userName);
-            update(u => ({...u, userName}));
+            console.log('set username ', userName);
+            update(u => ({...u, authorized: true, userName}));
         },
     };
 }
