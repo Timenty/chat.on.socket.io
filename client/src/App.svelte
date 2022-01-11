@@ -1,17 +1,21 @@
 <script lang="ts">
   import Router, { replace } from 'svelte-spa-router';
-  import { socket } from './storage/socketStore';
+  import { socketStore } from './storage/socketStore';
   import { user } from './storage/userStore';
-
   import routes from './routes';
 
-  function conditionsFailed(event) {
-    console.error('conditions failed event', event.detail);
+  $: socketConnectedStatus = $socketStore.connected;
+
+  function conditionsFailed() {
     replace('/login');
   }
 </script>
 
-<h5>{$user.userName}</h5>
+<b>{$user.userName || 'username'}</b>
+<br>
+<span>connected: {socketConnectedStatus}</span>
+<br>
+<span>isAuthorized: {$user.authorized}</span>
 
 <Router {routes} on:conditionsFailed={conditionsFailed}/>
 

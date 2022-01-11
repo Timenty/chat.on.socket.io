@@ -20,7 +20,6 @@
 <div class="login page">
   <div class="form">
     <h3 class="title">What's your nickname?</h3>
-    <h2>isAuthorized: {$user.authorized}</h2>
     <input
       bind:value={userName}
       class="usernameInput"

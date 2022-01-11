@@ -3,20 +3,20 @@ import type { ChatMessage } from '../types/message.type';
 import { user as userStore } from './userStore';
 
 const initialState = {
-    currentChatId: 1,
-    list: [
+    chats: [
         {
             id: 1,
             messages: []
         }
     ],
-    getCurrentChat() {
-        return this.list.find(({id}) => id === this.currentChatId);
+    currentChat: {
+        id: 1,
+        messages: []
     }
 };
 
 function chatStore() {
-    const { subscribe, update, set } = writable(initialState);
+    const { subscribe, update } = writable(initialState);
 
     let user; userStore.subscribe((v) =>  user = v);
     // функцонал подписки на обновления стейта
@@ -25,26 +25,25 @@ function chatStore() {
     const getChatById = (chats: Array<any>, chatId: number) => {
         return chats.find(({id}) => chatId === id);
     }
-    const getCurrentChat = () => getChatById(state.list, state.currentChatId);
 
-    const pushMessage = (message: ChatMessage): void => {
+    const pushMessage = (message): void => {
         update(chatStruct => {
-            const { currentChatId, list } = chatStruct;
-            const chat = getChatById(list, currentChatId);
-            chat.messages = [...chat.messages, message];
+            const { currentChat } = chatStruct;
+            currentChat.messages = [...currentChat.messages, message];
             return chatStruct;
         });
     };
 
     const log = (message: ChatMessage): void => {
-        message.username = "log";
+        message.userName = "log";
         pushMessage(message);
     };
 
     const addParticipantsMessage = (data: any) => {
         let chatMessage: ChatMessage = {
             message: '',
-            username: ''
+            userName: '',
+            time: Date.now()
         };
 
         if (data.numUsers === 1) {
@@ -59,7 +58,6 @@ function chatStore() {
     return {
         getChatById,
         subscribe,
-        getCurrentChat,
         pushMessage,
         addParticipantsMessage,
         getUser: () => {

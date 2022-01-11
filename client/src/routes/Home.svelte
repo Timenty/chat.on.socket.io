@@ -4,12 +4,12 @@
   import { user } from '../storage/userStore';
   import { chat } from '../storage/chatStore';
 
-  let username = $user.userName;
-  $: messages = $chat.getCurrentChat().messages;
+  let userName = $user.userName;
+  $: messages = $chat.currentChat.messages;
   let msgText: string = "";
 
   function send(): void {
-    sendMessage({ username, message: msgText } as ChatMessage);
+    sendMessage({ userName, message: msgText, time: Date.now() } as ChatMessage);
     msgText = "";
   }
 
@@ -22,8 +22,8 @@
 
 <div class="chatArea">
   <ul class="messages">
-    {#each messages as { message, username }}
-      <li>[{username}]: {message}</li>
+    {#each messages as { message, userName }}
+      <li>[{userName}]: {message}</li>
     {/each}
   </ul>
 </div>
