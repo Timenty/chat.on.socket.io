@@ -1,6 +1,6 @@
-const { userJoin, getRoomUsers } = require("../utils/users");
-const { formatMessage } = require("../utils/messages");
-const { nanoid } = require("nanoid");
+import { userJoin, getRoomUsers } from '../utils/users.mjs';
+import { formatMessage } from '../utils/messages.mjs';
+import { nanoid } from 'nanoid';
 
 const joinRoom = ({ socket, io }) => {
   // Runs when client join to room
@@ -28,4 +28,4 @@ const joinRoom = ({ socket, io }) => {
   };
 };
 
-module.exports = joinRoom;
+export default joinRoom;

@@ -1,6 +1,6 @@
-const { userLeave, getRoomUsers } = require("../utils/users");
-const { formatMessage } = require("../utils/messages");
-const { nanoid } = require("nanoid");
+import { userLeave, getRoomUsers } from '../utils/users.mjs';
+import { formatMessage } from '../utils/messages.mjs';
+import { nanoid } from 'nanoid';
 
 const disconnect = ({ socket, io }) => {
   // Runs when client disconnects
@@ -17,9 +17,9 @@ const disconnect = ({ socket, io }) => {
     // Send users and room info
     io.to(user.room).emit('roomUsers', {
       room: user.room,
-      users: getRoomUsers(user.room)
+      users: getRoomUsers(user.room),
     });
   };
 };
 
-module.exports = disconnect;
+export default disconnect;

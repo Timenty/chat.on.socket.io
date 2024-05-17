@@ -1,12 +1,12 @@
-const { getCurrentUser } = require("../utils/users");
-const { formatMessage } = require("../utils/messages");
-const { nanoid } = require("nanoid");
+import { getCurrentUser } from '../utils/users.mjs';
+import { formatMessage } from '../utils/messages.mjs';
+import { nanoid } from 'nanoid';
 
-const typing = ({ socket: { id }, io }) => {
+const typingStop = ({ socket: { id }, io }) => {
   // Listen for chatMessage
   return ({ message }) => {
-    console.log('user typing');
-    //     socket.broadcast.emit('typing', {
+    console.log('user stop typing');
+//     socket.broadcast.emit('stop typing', {
 //       username: socket.username
 //     });
     // const user = getCurrentUser(id);
@@ -16,4 +16,4 @@ const typing = ({ socket: { id }, io }) => {
   };
 };
 
-module.exports = typing;
+export default typingStop;

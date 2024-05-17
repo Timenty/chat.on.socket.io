@@ -1,12 +1,14 @@
 // Setup basic express server
-const express = require('express');
-const cors = require('cors');
+import express from 'express';
+import cors from 'cors';
+import http from 'http';
+import { SocketService } from './SocketService.mjs';
+
 const app = express();
-const http = require('http');
-const SocketService = require('./SocketService');
 const server = http.createServer(app);
+
 // Setup socket io
-const socket = new SocketService(server);
+new SocketService(server);
 
 // Middlewares
 app.use(cors());
@@ -18,6 +20,10 @@ const PORT = process.env.PORT || 3000;
 
 // Server start
 server.listen(PORT, () => {
-  console.log(`Server listening at port: ${PORT}`)
-  console.log(`url: ${CONNECTION}://${DOMAIN}/${PORT}`)
+  console.log(`Server listening at port: ${PORT}`);
+  console.log(`url: ${CONNECTION}://${DOMAIN}:${PORT}`);
+});
+
+server.on('error', (error) => {
+  console.error('Server error:', error);
 });

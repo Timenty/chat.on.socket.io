@@ -1,6 +1,7 @@
 {
   "name": "svelte-app",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
@@ -8,27 +9,27 @@
     "validate": "svelte-check"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^17.0.0",
-    "@rollup/plugin-node-resolve": "^11.0.0",
-    "@rollup/plugin-typescript": "^6.0.0",
-    "@tsconfig/svelte": "^1.0.0",
-    "rollup": "^2.3.4",
-    "rollup-plugin-css-only": "^3.1.0",
-    "rollup-plugin-livereload": "^2.0.0",
-    "rollup-plugin-svelte": "^7.0.0",
-    "rollup-plugin-terser": "^7.0.0",
-    "sass": "^1.32.5",
-    "svelte": "3.29.0",
-    "svelte-check": "^1.0.0",
-    "svelte-preprocess": "^4.0.0",
-    "tslib": "^2.0.0",
-    "typescript": "^3.9.3"
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@tsconfig/svelte": "^5.0.4",
+    "rollup": "^4.17.2",
+    "rollup-plugin-css-only": "^4.5.2",
+    "rollup-plugin-livereload": "^2.0.5",
+    "rollup-plugin-svelte": "^7.2.0",
+    "rollup-plugin-terser": "^7.0.2",
+    "sass": "^1.77.1",
+    "svelte": "4.2.17",
+    "svelte-check": "^3.7.1",
+    "svelte-preprocess": "^5.1.4",
+    "tslib": "^2.6.2",
+    "typescript": "^5.4.5"
   },
   "dependencies": {
-    "nanoid": "^3.1.30",
-    "sirv-cli": "^1.0.0",
-    "socket.io-client": "^4.1.2",
-    "svelte-spa-router": "^3.2.0",
-    "underscore": "^1.13.2"
+    "nanoid": "^5.0.7",
+    "sirv-cli": "^2.0.2",
+    "socket.io-client": "^4.7.5",
+    "svelte-spa-router": "^4.0.1",
+    "underscore": "^1.13.6"
   }
 }

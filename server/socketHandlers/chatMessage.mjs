@@ -1,6 +1,6 @@
-const { getCurrentUser } = require("../utils/users");
-const { formatMessage } = require("../utils/messages");
-const { nanoid } = require("nanoid");
+import { getCurrentUser } from '../utils/users.mjs';
+import { formatMessage } from '../utils/messages.mjs';
+import { nanoid } from 'nanoid';
 
 const chatMessage = ({ socket }) => {
   // Listen for chatMessage
@@ -22,4 +22,4 @@ const chatMessage = ({ socket }) => {
   };
 };
 
-module.exports = chatMessage;
+export default chatMessage;
