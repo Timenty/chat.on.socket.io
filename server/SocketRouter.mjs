@@ -15,7 +15,6 @@ export class SocketRouter {
     if (!socket || !io) throw new Error('socket and io params required');
 
     loadSocketHandlers().then(socketHandlers => {
-      console.log('Loaded socket handlers:', socketHandlers);
       Object.keys(socketHandlers).forEach(eventName => {
         const handler = socketHandlers[eventName];
         if (typeof handler === 'function') {
