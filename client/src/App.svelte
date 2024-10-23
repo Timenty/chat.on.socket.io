@@ -19,8 +19,6 @@
 
 <Router {routes} on:conditionsFailed={conditionsFailed}/>
 
-<style lang="scss">
-  :global(body) {
-    @import './styles/main.scss';
-  }
+<style global>
+  @import './styles/main.scss';
 </style>

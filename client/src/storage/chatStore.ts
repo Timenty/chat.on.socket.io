@@ -39,10 +39,39 @@ function chatStore() {
         return chats.find(({id}) => chatId === id);
     };
 
+    const isChatMessage = (message: Message): message is ChatMessage => {
+        return 'userName' in message;
+    };
+
     const pushMessage = (message: Message): void => {
+        // Only check for duplicates if it's a chat message
+        if (isChatMessage(message)) {
+            // Skip if this is a duplicate message (has both sender and recipient flags)
+            if (message.isSender && message.isRecipient) {
+                return;
+            }
+        }
+
         update(chatStruct => {
             const { currentChat } = chatStruct;
-            currentChat.messages = [...currentChat.messages, message];
+            // Check if message already exists in the chat
+            const isDuplicate = currentChat.messages.some(
+                msg => msg.id === message.id && 
+                      msg.time === message.time && 
+                      msg.text === message.text
+            );
+
+            if (!isDuplicate) {
+                currentChat.messages = [...currentChat.messages, message];
+            }
+            return chatStruct;
+        });
+    };
+
+    const initializeMessages = (messages: Message[]): void => {
+        update(chatStruct => {
+            const { currentChat } = chatStruct;
+            currentChat.messages = messages;
             return chatStruct;
         });
     };
@@ -69,6 +98,7 @@ function chatStore() {
         getChatById,
         subscribe,
         pushMessage,
+        initializeMessages,
         addParticipantsMessage,
         getUser: () => user,
         log,

@@ -8,24 +8,46 @@ import { user as userStore } from './userStore';
 const room = 'temporaryRoom';
 let socket: Socket;
 
+interface SocketState {
+    connected: boolean;
+    currentUser: User | null;
+    token: string | null;
+}
+
 // Socket status
 function createSocketStore() {
-    const { subscribe, update } = writable({
+    const { subscribe, update, set } = writable<SocketState>({
         connected: false,
-        currentUser: null as User | null,
+        currentUser: null,
+        token: localStorage.getItem('socket_token')
     });
 
-    // Initialize socket here to ensure it's created before use
-    socket = io('localhost:3000');
+    // Initialize socket with auth
+    const token = localStorage.getItem('socket_token');
+    socket = io('localhost:3000', {
+        auth: token ? { token } : undefined
+    });
 
     socket.on('connect', () => {
         console.log('on connected');
         update(socketData => ({ ...socketData, connected: true }));
+        
+        // Re-authenticate if we have user data
+        const currentUser = get({ subscribe }).currentUser;
+        if (currentUser && !get({ subscribe }).token) {
+            authenticate(currentUser);
+        }
     });
 
     socket.on("disconnect", () => {
         console.log('on disconnect');
         update(socketData => ({ ...socketData, connected: false }));
+    });
+
+    // Message History Handler
+    socket.on("messageHistory", (messages: ChatMessage[]) => {
+        console.log('received message history', messages);
+        chat.initializeMessages(messages);
     });
 
     // Message Handlers
@@ -36,7 +58,17 @@ function createSocketStore() {
 
     socket.on("privateMessage", (msg: ChatMessage) => {
         console.log('on private message', msg);
-        chat.pushMessage(msg);
+        const currentUser = get({ subscribe }).currentUser;
+        
+        if (currentUser) {
+            // Add sender/recipient flags
+            if (msg.from === currentUser.tag) {
+                msg.isSender = true;
+            } else if (msg.to === currentUser.tag) {
+                msg.isRecipient = true;
+            }
+            chat.pushMessage(msg);
+        }
     });
 
     socket.on("messageError", ({ error }) => {
@@ -63,48 +95,109 @@ function createSocketStore() {
         chat.addParticipantsMessage({ numUsers });
     });
 
-    socket.on("disconnect", () => {
-        chat.log("you have been disconnected", 'error');
-    });
-
     socket.on("reconnect", () => {
         chat.log("you have been reconnected", 'success');
         
         const currentUser = get({ subscribe }).currentUser;
+        const token = get({ subscribe }).token;
+        
         if (currentUser) {
-            socket.emit("joinRoom", { 
-                userName: currentUser.userName,
-                room 
-            });
+            if (token) {
+                // Reconnect with existing token
+                socket.auth = { token };
+            } else {
+                // Re-authenticate
+                authenticate(currentUser);
+            }
         }
     });
 
+    const authenticate = async (userData: User) => {
+        return new Promise((resolve, reject) => {
+            socket.emit('authenticate', userData, (response: { success: boolean; token?: string; userData?: User; error?: string }) => {
+                if (response.success && response.token) {
+                    const token = response.token || null;
+                    localStorage.setItem('socket_token', token as string);
+                    
+                    // Update user data with the received data including tag
+                    if (response.userData) {
+                        const completeUserData = {
+                            ...response.userData,
+                            authorized: true
+                        };
+                        userStore.setUserData(completeUserData);
+                        update(state => ({ 
+                            ...state, 
+                            token,
+                            currentUser: completeUserData 
+                        }));
+                    }
+                    
+                    resolve(response);
+                } else {
+                    reject(response.error || 'Authentication failed');
+                }
+            });
+        });
+    };
+
     return {
         subscribe,
-        setCurrentUser: (user: User) => {
-            update(socketData => ({ ...socketData, currentUser: user }));
+        setCurrentUser: async (user: User) => {
+            try {
+                await authenticate(user);
+                return true;
+            } catch (error) {
+                console.error('Authentication failed:', error);
+                return false;
+            }
         },
         getCurrentUser: () => get({ subscribe }).currentUser,
-        getSocket: () => socket
+        getSocket: () => socket,
+        logout: () => {
+            localStorage.removeItem('socket_token');
+            userStore.reset();
+            set({
+                connected: socket.connected,
+                currentUser: null,
+                token: null
+            });
+        }
     };
 }
 
 const socketStore = createSocketStore();
 
 // Actions
-function setUserName(userName: string): void {
-    socket.emit('joinRoom', { userName, room });
+async function setUserName(userName: string): Promise<void> {
+    const user = { userName };
+    const success = await socketStore.setCurrentUser(user as User);
+    
+    if (success) {
+        socket.emit('joinRoom', { userName, room });
+    } else {
+        chat.log('Failed to authenticate', 'error');
+    }
 }
 
 function sendMessage(msg: ChatMessage): void {
+    if (!socketStore.getCurrentUser()) {
+        chat.log('You must be authenticated to send messages', 'error');
+        return;
+    }
+
+    const currentUser = socketStore.getCurrentUser();
+    if (!currentUser) return;
+
     if (msg.isPrivate && msg.to) {
+        // For private messages, only emit to server and wait for confirmation
         socket.emit('privateMessage', {
             message: msg.text,
             recipientTag: msg.to
         });
     } else {
+        // For public messages, add to chat immediately and emit
         chat.pushMessage(msg);
-        console.log('send message', msg);
         socket.emit('chatMessage', msg);
     }
 }

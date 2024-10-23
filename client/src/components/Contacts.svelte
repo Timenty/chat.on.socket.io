@@ -8,6 +8,7 @@
   let newContactTag = '';
   let selectedContact: Contact | null = null;
   let privateMessage = '';
+  let copyFeedback = false;
 
   function addContact() {
     if (newContactTag.trim()) {
@@ -35,6 +36,22 @@
     selectedContact = contact;
   }
 
+  function handleKeyDown(e: KeyboardEvent, contact: Contact) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      selectContact(contact);
+    }
+  }
+
+  async function copyUserTag() {
+    const fullTag = `${$user.userName}#${$user.tag}`;
+    await navigator.clipboard.writeText(fullTag);
+    copyFeedback = true;
+    setTimeout(() => {
+      copyFeedback = false;
+    }, 2000);
+  }
+
   // Get initial contacts list
   $: if ($user.authorized) {
     contacts.getContacts();
@@ -44,8 +61,17 @@
 <div class="contacts-panel">
   <div class="contacts-header">
     <h3>Contacts</h3>
-    {#if $user.tag}
-      <div class="user-tag">Your tag: {$user.tag}</div>
+    {#if $user.userName && $user.tag}
+      <button 
+        class="user-tag" 
+        on:click={copyUserTag}
+        title="Click to copy"
+      >
+        {$user.userName}#{$user.tag}
+        {#if copyFeedback}
+          <span class="copy-feedback">Copied!</span>
+        {/if}
+      </button>
     {/if}
   </div>
 
@@ -64,18 +90,21 @@
       <p class="no-contacts">No contacts yet</p>
     {:else}
       {#each $contacts.contacts as contact}
-        <div
+        <button
+          type="button"
           class="contact-item"
           class:selected={selectedContact?.tag === contact.tag}
           class:online={contact.status === 'online'}
           on:click={() => selectContact(contact)}
+          on:keydown={(e) => handleKeyDown(e, contact)}
+          aria-pressed={selectedContact?.tag === contact.tag}
         >
           <div class="contact-info">
             <span class="contact-name">{contact.userName}</span>
             <span class="contact-tag">{contact.tag}</span>
           </div>
           <span class="status-indicator" title={contact.status}></span>
-        </div>
+        </button>
       {/each}
     {/if}
   </div>
@@ -114,6 +143,26 @@
     .user-tag {
       font-size: 0.9em;
       color: #666;
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      padding: 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      width: 100%;
+      text-align: left;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background: #eee;
+      }
+
+      .copy-feedback {
+        position: absolute;
+        right: 0.5rem;
+        color: #4CAF50;
+        font-size: 0.8em;
+      }
     }
   }
 
@@ -158,6 +207,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 100%;
+    text-align: left;
+    border: none;
+    font-size: inherit;
 
     &:hover {
       background: #eee;

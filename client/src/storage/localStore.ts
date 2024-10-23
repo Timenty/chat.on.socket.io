@@ -9,7 +9,8 @@ export const localStore = (key: string, initial: any) => {
     localStorage.setItem(key, toString(initial))               // initialize local storage with initial value
   }
 
-  const saved: any = JSON.parse(localStorage.getItem(key))     // convert to object
+  const savedValue = localStorage.getItem(key)                 // get stored value
+  const saved: any = savedValue ? JSON.parse(savedValue) : initial     // convert to object, fallback to initial if null
 
   const { subscribe, set, update } = writable(saved)           // create the underlying writable store
 

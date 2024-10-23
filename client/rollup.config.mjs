@@ -7,6 +7,8 @@ import sveltePreprocess from 'svelte-preprocess';
 import typescript from '@rollup/plugin-typescript';
 import css from 'rollup-plugin-css-only';
 import { spawn } from 'child_process';
+import fs from 'fs';
+import * as sass from 'sass';
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -31,6 +33,12 @@ function serve() {
   };
 }
 
+// Compile global SCSS
+const globalScss = sass.compile('src/styles/global.scss', {
+  style: production ? 'compressed' : 'expanded'
+});
+fs.writeFileSync('public/global.css', globalScss.css);
+
 export default {
   input: 'src/main.ts',
   output: {
@@ -43,9 +51,11 @@ export default {
   plugins: [
     svelte({
       preprocess: sveltePreprocess({
-        stylus: {
-          includePaths: ['src/styles'],
-        },
+        sourceMap: !production,
+        postcss: true,
+        scss: {
+          prependData: '@use "src/styles/global.scss" as *;'
+        }
       }),
       compilerOptions: {
         dev: !production
@@ -66,7 +76,7 @@ export default {
     !production && serve(),
     !production && livereload({
       watch: 'public',
-      port: 35729  // Убедитесь, что порт совпадает с тем, который использует LiveReload
+      port: 35729
     }),
     production && terser()
   ],

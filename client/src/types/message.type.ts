@@ -10,6 +10,8 @@ export interface ChatMessage extends BaseMessage {
     senderTag?: string;
     to?: string;
     from?: string;
+    isSender?: boolean;
+    isRecipient?: boolean;
 }
 
 export interface SystemMessage extends BaseMessage {
