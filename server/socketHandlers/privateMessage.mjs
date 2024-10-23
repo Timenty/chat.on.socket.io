@@ -1,38 +1,39 @@
-import { getCurrentUser, getUserByTag } from '../utils/users.mjs';
 import { formatMessage } from '../utils/messages.mjs';
-import { nanoid } from 'nanoid';
+import { getCurrentUser } from '../utils/users.mjs';
+import { sessionOps } from '../utils/redis.mjs';
 
-const privateMessage = ({ socket, io }) => {
-  return ({ message, recipientTag }) => {
-    const sender = getCurrentUser(socket.id);
-    const recipient = getUserByTag(recipientTag);
-
-    if (!sender || !recipient || !recipient.id) {
-      return socket.emit('messageError', {
-        error: 'Unable to send private message. User may be offline.'
-      });
+export default function privateMessage({ io, socket }) {
+  return async ({ message, recipientTag }) => {
+    const user = await getCurrentUser(socket.id);
+    
+    if (!user) {
+      return;
     }
 
-    const formattedMessage = formatMessage(
-      sender.userName,
+    // Create message for recipient
+    const formattedMessage = await formatMessage(
+      user.userName,
       message,
-      nanoid(),
-      true, // isPrivate
-      sender.tag
+      true,
+      user.tag,  // senderTag
+      recipientTag,  // to
+      user.tag   // from
     );
 
-    // Send to recipient
-    io.to(recipient.id).emit('privateMessage', {
-      ...formattedMessage,
-      from: sender.tag
-    });
-
-    // Send confirmation to sender
+    const targetSession = await sessionOps.getSession(recipientTag);
+    
+    if (targetSession) {
+      // Send to recipient
+      io.to(targetSession.socketId).emit('privateMessage', {
+        ...formattedMessage,
+        isRecipient: true
+      });
+    }
+    
+    // Send to sender
     socket.emit('privateMessage', {
       ...formattedMessage,
-      to: recipient.tag
+      isSender: true
     });
   };
-};
-
-export default privateMessage;
+}

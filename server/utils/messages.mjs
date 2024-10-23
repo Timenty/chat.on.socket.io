@@ -1,19 +1,22 @@
-/**
- * Format message
- * @param { string } userName
- * @param { string } text
- * @param { string } id
- * @param { boolean } isPrivate
- * @param { string } senderTag
- * @returns { Object } message
- */
-export const formatMessage = (userName, text, id, isPrivate = false, senderTag = null) => {
-  return {
-    id,
+import { messageOps } from './redis.mjs';
+
+export async function formatMessage(userName, text, isPrivate = false, senderTag = '', to = '', from = '') {
+  const message = await messageOps.saveMessage({
     userName,
     text,
-    time: new Date(),
     isPrivate,
-    senderTag
-  };
-};
+    senderTag,
+    to,
+    from
+  });
+  
+  return message;
+}
+
+export async function getRecentMessages(limit = 50) {
+  return await messageOps.getRecentMessages(limit);
+}
+
+export async function getPrivateMessages(from, to, limit = 50) {
+  return await messageOps.getPrivateMessages(from, to, limit);
+}
