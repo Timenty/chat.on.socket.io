@@ -1,24 +1,41 @@
-import { userJoin, getRoomUsers } from '../utils/users.mjs';
+import { userJoin, getCurrentUser, getRoomUsers } from '../utils/users.mjs';
 import { formatMessage } from '../utils/messages.mjs';
-import { nanoid } from 'nanoid';
 
 const joinRoom = ({ socket, io }) => {
-  // Runs when client join to room
   return ({ userName, room }) => {
-    const user = userJoin(socket.id, userName, room);
+    const users = userJoin(socket.id, userName, room);
+    const user = getCurrentUser(socket.id);
+
+    if (!user) {
+      return socket.emit('error', { message: 'Unable to join room' });
+    }
 
     socket.join(user.room);
 
     // Welcome current user
-    socket.emit('message', formatMessage('kekSystem', 'Welcome to ChatCord!'), nanoid());
+    socket.emit('message', formatMessage(
+      'Admin',
+      `Welcome ${user.userName}! Your tag is ${user.tag}`,
+      'system'
+    ));
+
+    // Send user info back to the client
+    socket.emit('userInfo', {
+      id: user.id,
+      userName: user.userName,
+      tag: user.tag,
+      contacts: user.contacts
+    });
 
     // Broadcast when a user connects
     socket.broadcast
       .to(user.room)
-      .emit(
-        'message',
-        formatMessage('kekSystem', `${user.userName} has joined the chat`, nanoid())
-      );
+      .emit('user joined', {
+        userName: user.userName,
+        tag: user.tag,
+        time: new Date(),
+        numUsers: getRoomUsers(user.room).length
+      });
 
     // Send users and room info
     io.to(user.room).emit('roomUsers', {

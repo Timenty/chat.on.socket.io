@@ -1,32 +1,17 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import chatMessage from './chatMessage.mjs';
+import disconnect from './disconnect.mjs';
+import joinRoom from './joinRoom.mjs';
+import typing from './typing.mjs';
+import typingStop from './typingStop.mjs';
+import privateMessage from './privateMessage.mjs';
+import contactManagement from './contactManagement.mjs';
 
-// Получение __dirname и __filename
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Функция для асинхронного импорта модулей
-async function importModules() {
-  const filesList = fs.readdirSync(__dirname);
-
-  const modules = {};
-
-  for (const fullFileName of filesList) {
-    const [fileName, extension] = fullFileName.split('.');
-
-    if (fileName === 'index' || extension !== 'mjs') {
-      continue;
-    }
-
-    const modulePath = `./${fullFileName}`;
-    const module = await import(modulePath);
-    modules[fileName] = module.default;
-  }
-
-  return modules;
-}
-
-// Экспортируем модули
-const modules = await importModules();
-export default modules;
+export default {
+    chatMessage,
+    disconnect,
+    joinRoom,
+    typing,
+    typingStop,
+    privateMessage,
+    contactManagement
+};
