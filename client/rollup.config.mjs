@@ -9,6 +9,7 @@ import css from 'rollup-plugin-css-only';
 import { spawn } from 'child_process';
 import fs from 'fs';
 import * as sass from 'sass';
+import rollupSass from 'rollup-plugin-sass';
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -49,17 +50,23 @@ export default {
     chunkFileNames: '[name].js'
   },
   plugins: [
+    rollupSass({
+      insert: true,
+      includePaths: ['src/styles']
+    }),
     svelte({
       preprocess: sveltePreprocess({
         sourceMap: !production,
-        postcss: true,
         scss: {
-          prependData: '@use "src/styles/global.scss" as *;'
+          includePaths: ['src/styles'],
+          prependData: '@use "src/styles/global.scss" as *;',
+          renderSync: true
         }
       }),
       compilerOptions: {
         dev: !production
-      }
+      },
+      emitCss: true
     }),
     css({
       output: 'bundle.css'

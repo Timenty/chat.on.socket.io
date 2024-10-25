@@ -18,6 +18,8 @@
   },
   "scripts": {
     "start": "node ./server/app.mjs",
-    "start-with-inspect": "node --inspect ./server/app.mjs"
+    "start-with-inspect": "node --inspect ./server/app.mjs",
+    "client": "cd ./client && npm run dev",
+    "flushdb": "redis-cli flushall"
   }
 }

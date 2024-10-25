@@ -5,20 +5,21 @@
   import { contacts } from '../storage/contactsStore';
   import { user } from '../storage/userStore';
   import { chat } from '../storage/chatStore';
+  import "../styles/components/ChatInput.scss";
 
   export let contactTag: string;
 
   $: currentContact = $contacts.contacts.find(contact => 
-    contact.tag === $chat.currentContactTag
+    contact.tag === contactTag
   );
 
   console.log('$contacts.contacts', $contacts.contacts);
   console.log('currentContact', currentContact);
   let msgText: string = "";
-  let userName = $user.userName;
+  let userName = $user.user?.userName || "";
 
   function send(): void {
-    if (!msgText.trim()) return;
+    if (!msgText.trim() || !$user.user) return;
     
     sendMessage({
       id: nanoid(),
@@ -27,7 +28,7 @@
       time: new Date(),
       isPrivate: true,
       to: currentContact?.tag || "no recipient",
-      senderTag: $user.tag
+      senderTag: $user.user.tag
     } as ChatMessageType);
     
     msgText = "";
@@ -56,40 +57,3 @@
     Send
   </button>
 </div>
-
-<style lang="scss">
-  .input-area {
-    padding: 1rem;
-    border-top: 1px solid #ccc;
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .inputMessage {
-    flex: 1;
-    padding: 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    resize: none;
-    font-family: inherit;
-
-    &:focus {
-      outline: none;
-      border-color: #2196F3;
-    }
-  }
-
-  .send-button {
-    padding: 0 1.5rem;
-    background: #2196F3;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-
-    &:hover {
-      background: #1976D2;
-    }
-  }
-</style>

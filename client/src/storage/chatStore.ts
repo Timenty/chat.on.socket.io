@@ -4,77 +4,56 @@ import type { Message, ChatMessage, SystemMessage } from '../types/message.type'
 import { User } from '../types/user.type';
 import { user as userStore } from './userStore';
 
-/**
- * Интерфейс для хранения информации о чате с контактом
- */
 interface Chat {
-    contactUserName: string;  // Полное имя контакта (включая тег)
-    messages: Message[];      // История сообщений
+    contactUserName: string;
+    messages: Message[];
 }
 
-/**
- * Состояние хранилища чатов
- */
 interface ChatState {
-    chats: Map<string, Chat>;           // Мапа чатов по полному имени контакта
-    currentContactUserName: string | null; // Полное имя текущего открытого чата
+    chats: Map<string, Chat>;
+    currentContactTag: string | null;
+    currentContactUserName: string | null;
 }
 
-// Начальное состояние хранилища
 const initialState: ChatState = {
     chats: new Map(),
+    currentContactTag: null,
     currentContactUserName: null
 };
 
-/**
- * Создает хранилище чатов с необходимыми методами управления
- */
 function chatStore() {
     const { subscribe, update } = writable(initialState);
 
-    // Подписка на изменения данных пользователя
     let currentUser: { user: User | null; authorized: boolean };
     userStore.subscribe((v) => currentUser = v);
     
-    // Локальная копия состояния для внутреннего использования
     let state: ChatState;
     subscribe((v: ChatState) => state = v);
 
-    /**
-     * Проверяет, является ли сообщение чатовым (не системным)
-     */
     const isChatMessage = (message: Message): message is ChatMessage => {
         return 'userName' in message;
     };
 
-    /**
-     * Добавляет новое сообщение в соответствующий чат
-     * @param message - Объект сообщения (чатовое или системное)
-     */
     const pushMessage = (message: Message): void => {
         update(chatState => {
-            // Обработка системных сообщений
             if (!isChatMessage(message)) {
-                // Системные сообщения добавляются в текущий открытый чат
                 if (chatState.currentContactUserName) {
-                    const currentChat = chatState.chats.get(chatState.currentContactUserName);
+                    const currentChat = chatState.chats.get(chatState.currentContactTag!);
                     if (currentChat) {
                         currentChat.messages = [...currentChat.messages, message];
-                        chatState.chats.set(chatState.currentContactUserName, currentChat);
+                        chatState.chats.set(chatState.currentContactTag!, currentChat);
                     }
                 }
                 return chatState;
             }
 
-            // Определяем, к какому чату относится сообщение
-            // Если текущий пользователь отправитель - берем получателя
-            // Если текущий пользователь получатель - берем отправителя
             const userUserName = currentUser.user?.userName || '';
             const messageContactUserName = message.from === userUserName ? message.to : message.from;
             if (!messageContactUserName) return chatState;
             
-            // Получаем или создаем чат для этого контакта
-            let chat = chatState.chats.get(messageContactUserName);
+            const messageContactTag = messageContactUserName.split('#')[1];
+            
+            let chat = chatState.chats.get(messageContactTag);
             if (!chat) {
                 chat = {
                     contactUserName: messageContactUserName,
@@ -82,7 +61,6 @@ function chatStore() {
                 };
             }
 
-            // Проверка на дубликаты сообщений
             const isDuplicate = chat.messages.some(existingMsg => {
                 if (!isChatMessage(existingMsg)) return false;
                 
@@ -95,63 +73,58 @@ function chatStore() {
                 );
             });
 
-            // Добавляем сообщение только если оно не дубликат
             if (!isDuplicate) {
                 chat.messages = [...chat.messages, {
                     ...message,
                     time: new Date(message.time)
                 }];
-                chatState.chats.set(messageContactUserName, chat);
+                chatState.chats.set(messageContactTag, chat);
             }
             
             return chatState;
         });
     };
 
-    /**
-     * Инициализирует чат с контактом и загружает историю сообщений
-     */
     const initializeChat = (contactUserName: string, messages: Message[]): void => {
+        const contactTag = contactUserName.split('#')[1];
         update(chatState => {
-            chatState.chats.set(contactUserName, {
+            chatState.chats.set(contactTag, {
                 contactUserName,
                 messages: messages.map(msg => ({
                     ...msg,
                     time: new Date(msg.time)
                 }))
             });
+            chatState.currentContactTag = contactTag;
             chatState.currentContactUserName = contactUserName;
             return chatState;
         });
     };
 
-    /**
-     * Обработчик загрузки истории сообщений
-     */
     const handleChatHistory = (contactUserName: string, messages: Message[]): void => {
         initializeChat(contactUserName, messages);
     };
 
-    /**
-     * Переключает текущий активный чат
-     */
-    const switchToChat = (contactUserName: string): void => {
+    const switchToChat = (contactTag: string): void => {
         update(chatState => {
-            // Создаем новый чат, если его еще нет
-            if (!chatState.chats.has(contactUserName)) {
-                chatState.chats.set(contactUserName, {
-                    contactUserName,
-                    messages: []
-                });
+            if (!chatState.chats.has(contactTag)) {
+                const contact = currentUser.user?.contacts?.find(c => c.split('#')[1] === contactTag);
+                if (contact) {
+                    chatState.chats.set(contactTag, {
+                        contactUserName: contact,
+                        messages: []
+                    });
+                    chatState.currentContactTag = contactTag;
+                    chatState.currentContactUserName = contact;
+                }
+            } else {
+                chatState.currentContactTag = contactTag;
+                chatState.currentContactUserName = chatState.chats.get(contactTag)?.contactUserName || null;
             }
-            chatState.currentContactUserName = contactUserName;
             return chatState;
         });
     };
 
-    /**
-     * Добавляет системное сообщение в текущий чат
-     */
     const log = (text: string, type: 'info' | 'error' | 'success' = 'info'): void => {
         const systemMessage: SystemMessage = {
             id: nanoid(),
@@ -162,18 +135,16 @@ function chatStore() {
         pushMessage(systemMessage);
     };
 
-    // Публичный интерфейс хранилища
     return {
         subscribe,
         pushMessage,
         initializeChat,
         handleChatHistory,
         switchToChat,
-        getCurrentChat: () => state.currentContactUserName ? state.chats.get(state.currentContactUserName) : null,
+        getCurrentChat: () => state.currentContactTag ? state.chats.get(state.currentContactTag) : null,
         getUser: () => currentUser.user,
         log
     };
 }
 
-// Экспортируем единственный экземпляр хранилища
 export const chat = chatStore();

@@ -2,15 +2,17 @@
   import { user } from '../storage/userStore';
   import { replace } from "svelte-spa-router";
 
-  let userName = $user.userName;
+  let userName = $user.user?.userName || "";
 
-  function submitUserName(): void {
-    user.setUserName(userName);
-    replace('/');
+  async function submitUserName(): Promise<void> {
+    const success = await user.setUserName(userName);
+    if (success) {
+      replace('/');
+    }
   }
 
-  function handleKeydown({ keyCode }: { keyCode: number }): void {
-    if ((keyCode === 13) && (userName.length > 3)) submitUserName();
+  async function handleKeydown({ keyCode }: { keyCode: number }): Promise<void> {
+    if ((keyCode === 13) && (userName.length > 3)) await submitUserName();
   }
 
 </script>

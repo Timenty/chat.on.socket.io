@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ChatMessage, SystemMessage } from "../types/message.type";
+  import "../styles/components/ChatMessage.scss";
 
   export let message: ChatMessage | SystemMessage;
 
@@ -47,90 +48,3 @@
     <div class="message-text">{message.text}</div>
   </li>
 {/if}
-
-<style lang="scss">
-  .system-message {
-    text-align: center;
-    padding: 0.5rem;
-    border-radius: 4px;
-    font-size: 0.9em;
-    color: #666;
-
-    &.error {
-      background: #ffebee;
-      color: #c62828;
-    }
-
-    &.success {
-      background: #e8f5e9;
-      color: #2e7d32;
-    }
-
-    &.info {
-      background: #e3f2fd;
-      color: #1565c0;
-    }
-
-    .time {
-      margin-left: 0.5rem;
-      font-size: 0.8em;
-      opacity: 0.7;
-    }
-  }
-
-  .chat-message {
-    padding: 0.75rem;
-    background: #f5f5f5;
-    border-radius: 4px;
-    max-width: 80%;
-
-    &.sent {
-      margin-left: auto;
-      background: #e3f2fd;
-    }
-
-    &.received {
-      margin-right: auto;
-      background: #f5f5f5;
-    }
-
-    &.private {
-      background: #fff3e0;
-      
-      &.sent {
-        background: #ffe0b2;
-      }
-    }
-
-    .message-header {
-      margin-bottom: 0.25rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.9em;
-
-      .username {
-        font-weight: 500;
-      }
-
-      .tag {
-        color: #666;
-      }
-
-      .private-indicator {
-        color: #e65100;
-        font-style: italic;
-      }
-
-      .time {
-        color: #666;
-        margin-left: auto;
-      }
-    }
-
-    .message-text {
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-  }
-</style>

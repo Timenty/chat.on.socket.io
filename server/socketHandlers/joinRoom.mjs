@@ -15,7 +15,7 @@ export default function joinRoom({ io, socket }) {
     // Welcome current user
     socket.emit('message', {
       userName: 'Admin',
-      text: `Welcome ${userName.split('#')[0]}!`,  // Extract display name for welcome message
+      text: `Welcome ${userName}!`,  // Extract display name for welcome message
       time: new Date(),
       id: 'system'
     });

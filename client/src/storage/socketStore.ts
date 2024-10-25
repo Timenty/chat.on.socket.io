@@ -1,12 +1,10 @@
-import { io, Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import { writable, get } from 'svelte/store';
 import type { ChatMessage } from '../types/message.type';
 import { User } from '../types/user.type';
 import { chat } from './chatStore';
 import { user as userStore } from './userStore';
-
-const room = 'temporaryRoom';
-let socket: Socket;
+import { eventBus } from './eventBus';
 
 interface SocketState {
     connected: boolean;
@@ -14,7 +12,6 @@ interface SocketState {
     token: string | null;
 }
 
-// Socket status
 function createSocketStore() {
     const { subscribe, update, set } = writable<SocketState>({
         connected: false,
@@ -23,16 +20,14 @@ function createSocketStore() {
     });
 
     // Initialize socket with auth
-    const token = localStorage.getItem('socket_token');
-    socket = io('localhost:3000', {
-        auth: token ? { token } : undefined
-    });
+    const token = localStorage.getItem('socket_token') ?? undefined;
+    const socket = eventBus.initializeSocket(token);
 
+    // Socket event handlers
     socket.on('connect', () => {
         console.log('on connected');
         update(socketData => ({ ...socketData, connected: true }));
         
-        // Re-authenticate if we have user data
         const currentUser = get({ subscribe }).currentUser;
         if (currentUser && !get({ subscribe }).token) {
             authenticate(currentUser);
@@ -44,12 +39,10 @@ function createSocketStore() {
         update(socketData => ({ ...socketData, connected: false }));
     });
 
-    // Message History Handler
     socket.on("messageHistory", (messages: ChatMessage[]) => {
         console.log('received message history', messages);
         const currentUser = get({ subscribe }).currentUser;
         if (currentUser && messages.length > 0) {
-            // Get the contact userName from the first message
             const firstMsg = messages[0];
             const contactUserName = firstMsg.from === currentUser.userName ? firstMsg.to : firstMsg.from;
             if (contactUserName) {
@@ -58,13 +51,11 @@ function createSocketStore() {
         }
     });
 
-    // Private Chat History Handler
     socket.on("privateChatHistory", ({ contactUserName, messages }) => {
         console.log('received private chat history', messages);
         chat.handleChatHistory(contactUserName, messages);
     });
 
-    // Message Handlers
     socket.on("message", (msg: ChatMessage) => {
         console.log('on message', msg);
         chat.pushMessage(msg);
@@ -91,7 +82,6 @@ function createSocketStore() {
         chat.log(error, 'error');
     });
 
-    // User Status Handlers
     socket.on("user joined", (data: { userName: string; time: string; numUsers: number }) => {
         const { userName, time } = data;
         const messageTime = (new Date(time)).toLocaleTimeString();
@@ -112,45 +102,39 @@ function createSocketStore() {
         
         if (currentUser) {
             if (token) {
-                // Reconnect with existing token
                 socket.auth = { token };
             } else {
-                // Re-authenticate
                 authenticate(currentUser);
             }
         }
     });
 
     const authenticate = async (userData: User) => {
-        return new Promise((resolve, reject) => {
-            socket.emit('authenticate', userData, (response: { 
-                success: boolean; token?: string; userData?: any; error?: string
-             }) => {
-                if (response.success && response.token) {
-                    const token = response.token || null;
-                    localStorage.setItem('socket_token', token as string);
-                    
-                    // Update user data with the received data
-                    if (response.userData) {
-                        const user = new User(
-                            response.userData.id || '',
-                            response.userData.userName,
-                            response.userData.contacts
-                        );
-                        userStore.setUserData(user);
-                        update(state => ({ 
-                            ...state, 
-                            token,
-                            currentUser: user
-                        }));
-                    }
-                    
-                    resolve(response);
-                } else {
-                    reject(response.error || 'Authentication failed');
+        try {
+            const response = await eventBus.emitUserName(userData.userName);
+            if (response.success && response.token) {
+                const token = response.token;
+                localStorage.setItem('socket_token', token);
+                
+                if (response.userData) {
+                    const user = new User(
+                        response.userData.id || '',
+                        response.userData.userName,
+                        response.userData.contacts
+                    );
+                    userStore.setUserData(user);
+                    update(state => ({ 
+                        ...state, 
+                        token,
+                        currentUser: user
+                    }));
                 }
-            });
-        });
+                return response;
+            }
+            throw new Error('Authentication failed');
+        } catch (error) {
+            throw error;
+        }
     };
 
     return {
@@ -177,23 +161,12 @@ function createSocketStore() {
             });
         },
         requestChatHistory: (contactUserName: string) => {
-            socket.emit('getPrivateMessages', { contactUserName });
+            eventBus.emitGetPrivateMessages(contactUserName);
         }
     };
 }
 
 const socketStore = createSocketStore();
-
-// Actions
-async function setUserName(userName: string): Promise<void> {
-    const success = await socketStore.setCurrentUser({ userName });
-    
-    if (success) {
-        socket.emit('joinRoom', { userName });
-    } else {
-        chat.log('Failed to authenticate', 'error');
-    }
-}
 
 function sendMessage(msg: ChatMessage): void {
     if (!socketStore.getCurrentUser()) {
@@ -205,13 +178,8 @@ function sendMessage(msg: ChatMessage): void {
     if (!currentUser) return;
 
     if (msg.isPrivate && msg.to) {
-        // For private messages, emit to server with required format
-        socket.emit('privateMessage', {
-            message: msg.text,
-            recipientUserName: msg.to
-        });
+        eventBus.emitPrivateMessage(msg.text, msg.to);
 
-        // Add message to local chat
         const localMessage = {
             ...msg,
             userName: currentUser.userName,
@@ -220,18 +188,16 @@ function sendMessage(msg: ChatMessage): void {
         };
         chat.pushMessage(localMessage);
     } else {
-        // For public messages
         const messageToSend = {
             ...msg,
             userName: currentUser.userName
         };
         chat.pushMessage(messageToSend);
-        socket.emit('chatMessage', messageToSend);
+        eventBus.emitChatMessage(messageToSend);
     }
 }
 
 export {
-    setUserName,
     sendMessage,
     socketStore
 };

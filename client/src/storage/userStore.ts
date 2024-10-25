@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 import { User } from '../types/user.type';
-import { setUserName as emitUserName } from './socketStore';
+import { eventBus } from './eventBus';
 
 export interface UserState {
     user: User | null;
@@ -17,14 +17,23 @@ function createUserStore() {
 
     return {
         subscribe,
-        setUserName: (userName = '') => {
-            emitUserName(userName);
-            console.log('set username ', userName);
-            update(state => ({
-                ...state,
-                authorized: true,
-                user: new User(state.user?.id || '', userName, state.user?.contacts)
-            }));
+        setUserName: async (userName = '') => {
+            try {
+                const response = await eventBus.emitUserName(userName);
+                if (response.success) {
+                    eventBus.emitJoinRoom(userName);
+                    update(state => ({
+                        ...state,
+                        authorized: true,
+                        user: new User(state.user?.id || '', userName, state.user?.contacts)
+                    }));
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Failed to set username:', error);
+                return false;
+            }
         },
         setUserData: (userData: Partial<User>) => {
             update(state => ({
