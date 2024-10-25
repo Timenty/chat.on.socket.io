@@ -3,7 +3,7 @@ import { userOps, sessionOps } from '../utils/redis.mjs';
 
 const contactManagement = ({ socket, io }) => {
   // Add contact handler
-  socket.on('addContact', async ({ contactTag }) => {
+  socket.on('addContact', async ({ contactUserName }) => {
     try {
       const user = await getCurrentUser(socket.id);
       
@@ -13,21 +13,15 @@ const contactManagement = ({ socket, io }) => {
         });
       }
 
-      // Parse username#tag format if provided
-      let tag = contactTag;
-      if (contactTag.includes('#')) {
-        tag = contactTag.split('#')[1];
-      }
-
       // Check if contact exists
-      const contactUser = await userOps.getUserByTag(tag);
+      const contactUser = await userOps.getUserByUserName(contactUserName);
       if (!contactUser) {
         return socket.emit('contactError', {
           error: 'User not found'
         });
       }
 
-      await userOps.addContact(socket.id, tag);
+      await userOps.addContact(socket.id, contactUserName);
 
       // Get updated contacts list with full user data
       const contacts = await userOps.getContacts(socket.id);
@@ -37,7 +31,7 @@ const contactManagement = ({ socket, io }) => {
       const targetSession = await sessionOps.getSession(contactUser.id);
       if (targetSession) {
         io.to(targetSession.socketId).emit('contactRequest', {
-          from: user.tag,
+          from: user.userName,
           userName: user.userName
         });
       }

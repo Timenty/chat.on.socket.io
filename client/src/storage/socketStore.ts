@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { writable, get } from 'svelte/store';
 import type { ChatMessage } from '../types/message.type';
-import type { User } from '../types/user.type';
+import { User } from '../types/user.type';
 import { chat } from './chatStore';
 import { user as userStore } from './userStore';
 
@@ -47,7 +47,21 @@ function createSocketStore() {
     // Message History Handler
     socket.on("messageHistory", (messages: ChatMessage[]) => {
         console.log('received message history', messages);
-        chat.initializeMessages(messages);
+        const currentUser = get({ subscribe }).currentUser;
+        if (currentUser && messages.length > 0) {
+            // Get the contact userName from the first message
+            const firstMsg = messages[0];
+            const contactUserName = firstMsg.from === currentUser.userName ? firstMsg.to : firstMsg.from;
+            if (contactUserName) {
+                chat.initializeChat(contactUserName, messages);
+            }
+        }
+    });
+
+    // Private Chat History Handler
+    socket.on("privateChatHistory", ({ contactUserName, messages }) => {
+        console.log('received private chat history', messages);
+        chat.handleChatHistory(contactUserName, messages);
     });
 
     // Message Handlers
@@ -61,13 +75,14 @@ function createSocketStore() {
         const currentUser = get({ subscribe }).currentUser;
         
         if (currentUser) {
-            // Add sender/recipient flags
-            if (msg.from === currentUser.tag) {
-                msg.isSender = true;
-            } else if (msg.to === currentUser.tag) {
-                msg.isRecipient = true;
+            if (msg.to === currentUser.userName || msg.from === currentUser.userName) {
+                const transformedMessage = {
+                    ...msg,
+                    isSender: msg.from === currentUser.userName,
+                    isRecipient: msg.to === currentUser.userName
+                };
+                chat.pushMessage(transformedMessage);
             }
-            chat.pushMessage(msg);
         }
     });
 
@@ -77,22 +92,16 @@ function createSocketStore() {
     });
 
     // User Status Handlers
-    socket.on("user joined", (data: { userName: string; time: string; tag: string; numUsers: number }) => {
-        const { userName, time, tag, numUsers } = data;
+    socket.on("user joined", (data: { userName: string; time: string; numUsers: number }) => {
+        const { userName, time } = data;
         const messageTime = (new Date(time)).toLocaleTimeString();
-
-        chat.log(`${userName} (${tag}) joined at ${messageTime}`, 'info');
-        console.log('user joined', data);
-        chat.addParticipantsMessage({ numUsers });
+        chat.log(`${userName} joined at ${messageTime}`, 'info');
     });
 
-    socket.on("user left", (data: { userName: string; time: string; tag: string; numUsers: number }) => {
-        const { userName, time, tag, numUsers } = data;
+    socket.on("user left", (data: { userName: string; time: string; numUsers: number }) => {
+        const { userName, time } = data;
         const messageTime = (new Date(time)).toLocaleTimeString();
-
-        chat.log(`${userName} (${tag}) left at ${messageTime}`, 'info');
-        console.log('user left', data);
-        chat.addParticipantsMessage({ numUsers });
+        chat.log(`${userName} left at ${messageTime}`, 'info');
     });
 
     socket.on("reconnect", () => {
@@ -114,22 +123,25 @@ function createSocketStore() {
 
     const authenticate = async (userData: User) => {
         return new Promise((resolve, reject) => {
-            socket.emit('authenticate', userData, (response: { success: boolean; token?: string; userData?: User; error?: string }) => {
+            socket.emit('authenticate', userData, (response: { 
+                success: boolean; token?: string; userData?: any; error?: string
+             }) => {
                 if (response.success && response.token) {
                     const token = response.token || null;
                     localStorage.setItem('socket_token', token as string);
                     
-                    // Update user data with the received data including tag
+                    // Update user data with the received data
                     if (response.userData) {
-                        const completeUserData = {
-                            ...response.userData,
-                            authorized: true
-                        };
-                        userStore.setUserData(completeUserData);
+                        const user = new User(
+                            response.userData.id || '',
+                            response.userData.userName,
+                            response.userData.contacts
+                        );
+                        userStore.setUserData(user);
                         update(state => ({ 
                             ...state, 
                             token,
-                            currentUser: completeUserData 
+                            currentUser: user
                         }));
                     }
                     
@@ -143,8 +155,9 @@ function createSocketStore() {
 
     return {
         subscribe,
-        setCurrentUser: async (user: User) => {
+        setCurrentUser: async (userData: { userName: string }) => {
             try {
+                const user = new User('', userData.userName);
                 await authenticate(user);
                 return true;
             } catch (error) {
@@ -162,6 +175,9 @@ function createSocketStore() {
                 currentUser: null,
                 token: null
             });
+        },
+        requestChatHistory: (contactUserName: string) => {
+            socket.emit('getPrivateMessages', { contactUserName });
         }
     };
 }
@@ -170,11 +186,10 @@ const socketStore = createSocketStore();
 
 // Actions
 async function setUserName(userName: string): Promise<void> {
-    const user = { userName };
-    const success = await socketStore.setCurrentUser(user as User);
+    const success = await socketStore.setCurrentUser({ userName });
     
     if (success) {
-        socket.emit('joinRoom', { userName, room });
+        socket.emit('joinRoom', { userName });
     } else {
         chat.log('Failed to authenticate', 'error');
     }
@@ -190,15 +205,28 @@ function sendMessage(msg: ChatMessage): void {
     if (!currentUser) return;
 
     if (msg.isPrivate && msg.to) {
-        // For private messages, only emit to server and wait for confirmation
+        // For private messages, emit to server with required format
         socket.emit('privateMessage', {
             message: msg.text,
-            recipientTag: msg.to
+            recipientUserName: msg.to
         });
+
+        // Add message to local chat
+        const localMessage = {
+            ...msg,
+            userName: currentUser.userName,
+            from: currentUser.userName,
+            isSender: true
+        };
+        chat.pushMessage(localMessage);
     } else {
-        // For public messages, add to chat immediately and emit
-        chat.pushMessage(msg);
-        socket.emit('chatMessage', msg);
+        // For public messages
+        const messageToSend = {
+            ...msg,
+            userName: currentUser.userName
+        };
+        chat.pushMessage(messageToSend);
+        socket.emit('chatMessage', messageToSend);
     }
 }
 

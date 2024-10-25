@@ -4,10 +4,9 @@ export interface BaseMessage {
 }
 
 export interface ChatMessage extends BaseMessage {
-    userName: string;
+    userName: string;  // Now contains both username and tag in format "username#tag"
     text: string;
     isPrivate?: boolean;
-    senderTag?: string;
     to?: string;
     from?: string;
     isSender?: boolean;

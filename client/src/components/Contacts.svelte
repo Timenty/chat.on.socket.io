@@ -1,13 +1,12 @@
 <script lang="ts">
   import { contacts } from '../storage/contactsStore';
   import { user } from '../storage/userStore';
+  import { chat } from '../storage/chatStore';
+  import { socketStore } from '../storage/socketStore';
   import type { Contact } from '../types/user.type';
-  import { sendMessage } from '../storage/socketStore';
-  import { nanoid } from 'nanoid';
 
   let newContactTag = '';
   let selectedContact: Contact | null = null;
-  let privateMessage = '';
   let copyFeedback = false;
 
   function addContact() {
@@ -17,23 +16,11 @@
     }
   }
 
-  function sendPrivateMessage() {
-    if (privateMessage.trim() && selectedContact) {
-      sendMessage({
-        id: nanoid(),
-        userName: $user.userName || '',
-        text: privateMessage.trim(),
-        time: new Date(),
-        isPrivate: true,
-        to: selectedContact.tag,
-        senderTag: $user.tag
-      });
-      privateMessage = '';
-    }
-  }
-
   function selectContact(contact: Contact) {
     selectedContact = contact;
+    console.log("Selected contact:", selectedContact);
+    chat.switchToChat(contact.tag);
+    socketStore.getSocket().emit('getChatHistory', { contactTag: contact.tag });
   }
 
   function handleKeyDown(e: KeyboardEvent, contact: Contact) {
@@ -52,7 +39,10 @@
     }, 2000);
   }
 
-  // Get initial contacts list
+  socketStore.getSocket().on('privateChatHistory', ({ contactTag, messages }) => {
+    chat.handleChatHistory(contactTag, messages);
+  });
+
   $: if ($user.authorized) {
     contacts.getContacts();
   }
@@ -94,7 +84,6 @@
           type="button"
           class="contact-item"
           class:selected={selectedContact?.tag === contact.tag}
-          class:online={contact.status === 'online'}
           on:click={() => selectContact(contact)}
           on:keydown={(e) => handleKeyDown(e, contact)}
           aria-pressed={selectedContact?.tag === contact.tag}
@@ -103,26 +92,16 @@
             <span class="contact-name">{contact.userName}</span>
             <span class="contact-tag">{contact.tag}</span>
           </div>
-          <span class="status-indicator" title={contact.status}></span>
+          <span 
+            class="status-indicator" 
+            class:online={contact.status === 'online'}
+            class:offline={contact.status === 'offline'}
+            title={contact.status === 'online' ? 'Online' : 'Offline'}
+          ></span>
         </button>
       {/each}
     {/if}
   </div>
-
-  {#if selectedContact}
-    <div class="private-chat">
-      <h4>Chat with {selectedContact.userName}</h4>
-      <div class="message-input">
-        <input
-          type="text"
-          bind:value={privateMessage}
-          placeholder="Type private message..."
-          on:keydown={(e) => e.key === 'Enter' && sendPrivateMessage()}
-        />
-        <button on:click={sendPrivateMessage}>Send</button>
-      </div>
-    </div>
-  {/if}
 </div>
 
 <style lang="scss">
@@ -219,10 +198,6 @@
     &.selected {
       background: #e3f2fd;
     }
-
-    &.online .status-indicator {
-      background: #4CAF50;
-    }
   }
 
   .contact-info {
@@ -245,39 +220,16 @@
     height: 10px;
     border-radius: 50%;
     background: #ccc;
-  }
+    transition: background-color 0.3s ease;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
 
-  .private-chat {
-    border-top: 1px solid #ccc;
-    padding-top: 1rem;
-
-    h4 {
-      margin: 0 0 0.5rem 0;
+    &.online {
+      background: #4CAF50;
+      box-shadow: 0 0 4px rgba(76, 175, 80, 0.5);
     }
 
-    .message-input {
-      display: flex;
-      gap: 0.5rem;
-
-      input {
-        flex: 1;
-        padding: 0.5rem;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-      }
-
-      button {
-        padding: 0.5rem 1rem;
-        background: #2196F3;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-
-        &:hover {
-          background: #1976D2;
-        }
-      }
+    &.offline {
+      background: #9e9e9e;
     }
   }
 

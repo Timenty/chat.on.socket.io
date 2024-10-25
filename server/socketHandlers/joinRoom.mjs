@@ -2,8 +2,8 @@ import { userJoin, getOnlineUsers } from '../utils/users.mjs';
 import { messageOps } from '../utils/redis.mjs';
 
 export default function joinRoom({ io, socket }) {
-  return async ({ userName, tag }) => {
-    const user = await userJoin(socket.id, userName, tag);
+  return async ({ userName }) => {
+    const user = await userJoin(socket.id, userName);  // userName now contains both name and tag
     const onlineUsers = await getOnlineUsers();
     
     // Get recent messages from Redis
@@ -15,15 +15,14 @@ export default function joinRoom({ io, socket }) {
     // Welcome current user
     socket.emit('message', {
       userName: 'Admin',
-      text: `Welcome ${userName}!`,
+      text: `Welcome ${userName.split('#')[0]}!`,  // Extract display name for welcome message
       time: new Date(),
       id: 'system'
     });
 
     // Broadcast when a user connects
     socket.broadcast.emit('user joined', {
-      userName,
-      tag,
+      userName,  // Send full userName
       time: new Date(),
       numUsers: onlineUsers.length
     });

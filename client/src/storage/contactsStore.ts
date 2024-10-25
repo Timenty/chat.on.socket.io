@@ -5,7 +5,7 @@ import { socketStore } from './socketStore';
 function createContactsStore() {
     const { subscribe, update, set } = writable<{
         contacts: Contact[];
-        pendingRequests: string[];
+        pendingRequests: string[];  // Now stores full userNames instead of just tags
     }>({
         contacts: [],
         pendingRequests: []
@@ -28,10 +28,10 @@ function createContactsStore() {
         }));
     });
 
-    socket.on('contactRequest', ({ from }) => {
+    socket.on('contactRequest', ({ from, userName }) => {
         update(store => ({
             ...store,
-            pendingRequests: [...store.pendingRequests, from]
+            pendingRequests: [...store.pendingRequests, userName]
         }));
     });
 
@@ -42,28 +42,30 @@ function createContactsStore() {
     return {
         subscribe,
         
-        addContact: (contactTag: string) => {
-            socket.emit('addContact', { contactTag });
+        addContact: (contactUserName: string) => {
+            console.log('addContact', contactUserName);
+            socket.emit('addContact', { contactUserName });
         },
 
         updateContacts: (contacts: Contact[]) => {
+            console.log('updateContacts', contacts);
             update(store => ({
                 ...store,
                 contacts
             }));
         },
 
-        addPendingRequest: (tag: string) => {
+        addPendingRequest: (userName: string) => {
             update(store => ({
                 ...store,
-                pendingRequests: [...store.pendingRequests, tag]
+                pendingRequests: [...store.pendingRequests, userName]
             }));
         },
 
-        removePendingRequest: (tag: string) => {
+        removePendingRequest: (userName: string) => {
             update(store => ({
                 ...store,
-                pendingRequests: store.pendingRequests.filter(t => t !== tag)
+                pendingRequests: store.pendingRequests.filter(name => name !== userName)
             }));
         },
 

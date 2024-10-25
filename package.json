@@ -1,8 +1,8 @@
 {
   "name": "chat.on.socket.io",
-  "version": "0.0.0",
-  "description": "A chat client and server using socket.io",
-  "main": "./src/server/app.js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "author": "Timenty",
   "private": true,
   "license": "BSD",

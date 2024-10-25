@@ -1,7 +1,7 @@
 import { userOps, sessionOps } from './redis.mjs';
 
-export async function userJoin(id, userName, tag) {
-  const user = { id, userName, tag };
+export async function userJoin(id, userName) {
+  const user = { id, userName };  // userName now contains both name and tag
   await userOps.saveUser(user);
   await sessionOps.createSession(id, id); // Using id as socketId for simplicity
   return user;
@@ -20,12 +20,12 @@ export async function getOnlineUsers() {
   return await userOps.getOnlineUsers();
 }
 
-export async function addContact(userId, contactTag) {
-  await userOps.addContact(userId, contactTag);
+export async function addContact(userId, contactUserName) {
+  await userOps.addContact(userId, contactUserName);
 }
 
-export async function removeContact(userId, contactTag) {
-  await userOps.removeContact(userId, contactTag);
+export async function removeContact(userId, contactUserName) {
+  await userOps.removeContact(userId, contactUserName);
 }
 
 export async function getContacts(userId) {

@@ -7,8 +7,7 @@ const typing = ({ socket, io }) => {
 
     // Broadcast typing event to all users except sender
     socket.broadcast.emit('typing', {
-      userName: user.userName,
-      tag: user.tag
+      userName: user.userName  // userName now contains both name and tag
     });
   };
 };

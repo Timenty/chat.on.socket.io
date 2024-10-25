@@ -1,17 +1,15 @@
 import { writable } from 'svelte/store';
-import type { User } from '../types/user.type';
+import { User } from '../types/user.type';
 import { setUserName as emitUserName } from './socketStore';
 
-export interface UserState extends Partial<User> {
+export interface UserState {
+    user: User | null;
     authorized: boolean;
 }
 
 const initialState: UserState = {
-    userName: '',
-    authorized: false,
-    id: '',
-    tag: '',
-    contacts: []
+    user: null,
+    authorized: false
 };
 
 function createUserStore() {
@@ -22,16 +20,20 @@ function createUserStore() {
         setUserName: (userName = '') => {
             emitUserName(userName);
             console.log('set username ', userName);
-            update(u => ({
-                ...u,
+            update(state => ({
+                ...state,
                 authorized: true,
-                userName
+                user: new User(state.user?.id || '', userName, state.user?.contacts)
             }));
         },
         setUserData: (userData: Partial<User>) => {
-            update(u => ({
-                ...u,
-                ...userData
+            update(state => ({
+                ...state,
+                user: state.user ? new User(
+                    userData.id || state.user.id,
+                    userData.userName || state.user.userName,
+                    userData.contacts || state.user.contacts
+                ) : null
             }));
         },
         reset: () => set(initialState)
